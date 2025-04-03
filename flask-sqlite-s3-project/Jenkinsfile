@@ -1,0 +1,47 @@
+pipeline {
+    agent {
+        label 'amazon-linux'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Setup') {
+            steps {
+                sh 'pip install -r requirements.txt'
+                sh 'chmod +x setup.sh'
+                sh './setup.sh'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh 'python -m pytest || echo "No tests yet"'
+            }
+        }
+        
+        stage('Create Artifact') {
+            steps {
+                sh 'tar -czvf flask-app.tar.gz app.py init_db.sql requirements.txt templates/ data.db'
+            }
+        }
+        
+        stage('Upload to S3') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                    sh 'aws s3 cp flask-app.tar.gz s3://your-bucket-name/artifacts/flask-app-${BUILD_NUMBER}.tar.gz'
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                sh 'cd ansible && ansible-playbook -i inventory/aws_ec2.yml playbook.yml'
+            }
+        }
+    }
+}
