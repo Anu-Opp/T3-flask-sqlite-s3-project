@@ -1,6 +1,12 @@
 pipeline {
     agent {
-        label 'amazon-linux'
+        label 'amazon-linux'  // Use the Amazon Linux agent
+    }
+    
+    environment {
+        S3_BUCKET = 'flask-sqlite-artifacts'
+        ARTIFACT_NAME = "flask-app-${BUILD_NUMBER}.zip"
+        AWS_REGION = 'us-east-1'  // Change to your AWS region
     }
     
     stages {
@@ -10,38 +16,65 @@ pipeline {
             }
         }
         
-        stage('Setup') {
+        stage('Install Dependencies') {
             steps {
-                sh 'pip install -r requirements.txt'
-                sh 'chmod +x setup.sh'
-                sh './setup.sh'
+                sh 'pip3 install -r requirements.txt'
             }
         }
         
         stage('Test') {
             steps {
-                sh 'python -m pytest || echo "No tests yet"'
+                sh 'python3 -m pytest || echo "No tests available"'
             }
         }
         
-        stage('Create Artifact') {
+        stage('Package Artifact') {
             steps {
-                sh 'tar -czvf flask-app.tar.gz app.py init_db.sql requirements.txt templates/ data.db'
+                sh '''
+                # Ensure templates directory exists
+                mkdir -p templates
+                
+                # Move HTML files to templates if needed
+                if [ -f index.html ] && [ ! -f templates/index.html ]; then
+                    mv index.html templates/
+                fi
+                
+                # Package all required files
+                zip -r ${ARTIFACT_NAME} app.py templates/ requirements.txt init_db.sql data.db || echo "Using existing files"
+                '''
             }
         }
         
         stage('Upload to S3') {
             steps {
-                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
-                    sh 'aws s3 cp flask-app.tar.gz s3://your-bucket-name/artifacts/flask-app-${BUILD_NUMBER}.tar.gz'
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
+                                  credentialsId: 'aws-credentials',
+                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    sh 'aws s3 cp ${ARTIFACT_NAME} s3://${S3_BUCKET}/${ARTIFACT_NAME}'
                 }
             }
         }
         
-        stage('Deploy') {
-            steps {
-                sh 'cd ansible && ansible-playbook -i inventory/aws_ec2.yml playbook.yml'
-            }
+       stage('Deploy with Ansible') {
+    steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: 'aws-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+            sh '''
+                /var/lib/jenkins/run-ansible.sh deploy_flask_app.yml -e "artifact_name=${ARTIFACT_NAME}" -e "s3_bucket=${S3_BUCKET}"
+            '''
+        }
+    }
+}
+    
+    post {
+        success {
+            echo 'Deployment successful! The Flask application is now accessible at http://your-app-server-ip:5000'
+        }
+        failure {
+            echo 'Deployment failed. Check the logs for details.'
         }
     }
 }
