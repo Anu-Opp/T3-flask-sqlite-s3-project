@@ -1,14 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Flask SQLite App</title>
+<title>Team -3- Flask SQLite App</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        line-height: 1.6;
+    }
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .footer {
+        margin-top: 40px;
+        padding-top: 10px;
+        border-top: 1px solid #ccc;
+        font-size: 0.9em;
+        color: #555;
+    }
+</style>
 </head>
 <body>
-  <h1>Flask + SQLite app running via DevOps pipeline!</h1>
-  <ul>
-    {% for msg in messages %}
-      <li>{{ msg }}</li>
-    {% endfor %}
-  </ul>
+<div class="container">
+    <h1>Flask + SQLite app running via DevOps pipeline!</h1>
+    
+    <ul>
+     {% for msg in messages %}
+        <li>{{ msg }}</li>
+     {% endfor %}
+    </ul>
+    
+    <div class="footer">
+        <p>This project is delivered moving image</p>
+        <p>Configured, built and deployed by Anu and Yetunde</p>
+    </div>
+</div>
 </body>
 </html>
