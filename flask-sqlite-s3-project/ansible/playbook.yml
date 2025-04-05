@@ -1,8 +1,0 @@
----
-- name: Deploy Flask app with SQLite
-  hosts: tag_Role_flask_app
-  become: true
-  vars:
-    ansible_python_interpreter: /usr/bin/python3
-  roles:
-    - role: flask-app

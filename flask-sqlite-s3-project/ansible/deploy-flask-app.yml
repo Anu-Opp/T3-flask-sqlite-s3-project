@@ -1,0 +1,62 @@
+# /var/lib/jenkins/ansible/deploy_flask_app.yml
+---
+- name: Deploy Flask SQLite Application
+  hosts: tag_Role_flask_app
+  become: yes
+  vars:
+    app_dir: /opt/flask-app
+    artifact_name: "{{ artifact_name }}"
+    s3_bucket: "{{ s3_bucket }}"
+  
+  tasks:
+    - name: Install required packages
+      package:
+        name:
+          - python3
+          - python3-pip
+          - sqlite
+          - unzip
+        state: present
+    
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+    
+    - name: Download artifact from S3
+      aws_s3:
+        bucket: "{{ s3_bucket }}"
+        object: "{{ artifact_name }}"
+        dest: "/tmp/{{ artifact_name }}"
+        mode: get
+      delegate_to: localhost
+    
+    - name: Unzip application files
+      unarchive:
+        src: "/tmp/{{ artifact_name }}"
+        dest: "{{ app_dir }}"
+        remote_src: yes
+    
+    - name: Install Python requirements
+      pip:
+        requirements: "{{ app_dir }}/requirements.txt"
+        executable: pip3
+    
+    - name: Initialize SQLite database if not exists
+      shell: "sqlite3 {{ app_dir }}/data.db < {{ app_dir }}/init_db.sql"
+      args:
+        creates: "{{ app_dir }}/data.db"
+    
+    - name: Create Flask service file
+      template:
+        src: "roles/flask-app/templates/flask-service.j2"
+        dest: /etc/systemd/system/flask-app.service
+        mode: '0644'
+    
+    - name: Start and enable Flask service
+      systemd:
+        name: flask-app
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
