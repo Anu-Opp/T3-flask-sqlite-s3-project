@@ -63,7 +63,9 @@ pipeline {
                         accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             sh '''
-                /var/lib/jenkins/run-ansible.sh deploy_flask_app.yml -e "artifact_name=${ARTIFACT_NAME}" -e "s3_bucket=${S3_BUCKET}"
+                source /var/lib/jenkins/.ansible-venv/bin/activate
+                cd /var/lib/jenkins/ansible/T3-flask-sqlite-s3-project/flask-sqlite-s3-project/ansible
+                ansible-playbook deploy_flask_app.yml -e "artifact_name=${ARTIFACT_NAME}" -e "s3_bucket=${S3_BUCKET}"
             '''
         }
     }
