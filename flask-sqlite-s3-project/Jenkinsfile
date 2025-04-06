@@ -1,10 +1,10 @@
 pipeline {
     agent {
-        label 'amazon-linux'  // Use the Amazon Linux agent
+        label 'amazon-linux'  // Ensure this matches the correct agent label in Jenkins
     }
     
     environment {
-        S3_BUCKET = 'flask-sqlite-artifacts'
+        S3_BUCKET = 't3-flask-app-artifacts'
         ARTIFACT_NAME = "flask-app-${BUILD_NUMBER}.zip"
         AWS_REGION = 'us-east-1'  // Change to your AWS region
     }
@@ -40,7 +40,7 @@ pipeline {
                 fi
                 
                 # Package all required files
-                zip -r ${ARTIFACT_NAME} app.py templates/ requirements.txt init_db.sql data.db || echo "Using existing files"
+                zip -r "${ARTIFACT_NAME}" app.py templates/ requirements.txt init_db.sql data.db || echo "Using existing files"
                 '''
             }
         }
@@ -51,25 +51,26 @@ pipeline {
                                   credentialsId: 'aws-credentials',
                                   accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    sh 'aws s3 cp ${ARTIFACT_NAME} s3://${S3_BUCKET}/${ARTIFACT_NAME}'
+                    sh 'aws s3 cp "${ARTIFACT_NAME}" s3://${S3_BUCKET}/${ARTIFACT_NAME}'
                 }
             }
         }
         
-       stage('Deploy with Ansible') {
-    steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
-                        credentialsId: 'aws-credentials',
-                        accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-            sh '''
-                source /var/lib/jenkins/.ansible-venv/bin/activate
-                cd /var/lib/jenkins/ansible/T3-flask-sqlite-s3-project/flask-sqlite-s3-project/ansible
-                ansible-playbook deploy_flask_app.yml -e "artifact_name=${ARTIFACT_NAME}" -e "s3_bucket=${S3_BUCKET}"
-            '''
+        stage('Deploy with Ansible') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
+                                  credentialsId: 'aws-credentials',
+                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    sh '''
+                    source /var/lib/jenkins/.ansible-venv/bin/activate
+                    cd /var/lib/jenkins/ansible/T3-flask-sqlite-s3-project/flask-sqlite-s3-project/ansible
+                    ansible-playbook deploy-flask-app.yml -e "artifact_name=${ARTIFACT_NAME}" -e "s3_bucket=${S3_BUCKET}"
+                    '''
+                }
+            }
         }
     }
-}
     
     post {
         success {
