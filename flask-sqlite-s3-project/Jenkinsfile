@@ -9,10 +9,15 @@ pipeline {
         AWS_REGION = 'us-east-1'
         ANSIBLE_PATH = "${WORKSPACE}/flask-sqlite-s3-project/ansible"
         ANSIBLE_VENV = "${WORKSPACE}/.ansible-venv"
-        ANSIBLE_CONFIG = '/var/lib/jenkins/ansible/ansible.cfg'
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                sh 'rm -f flask-app-*.zip || true'
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git credentialsId: 'git-credentials',
@@ -86,12 +91,9 @@ pipeline {
                 sh '''
                     echo "WORKSPACE: $WORKSPACE"
                     echo "ANSIBLE_PATH: $ANSIBLE_PATH"
-                    echo "ANSIBLE_CONFIG: $ANSIBLE_CONFIG"
                     pwd
                     ls -al
                     ls -al "$ANSIBLE_PATH"
-                    ls -l "$ANSIBLE_CONFIG" || echo "⚠️ ansible.cfg not found!"
-                    cat "$ANSIBLE_CONFIG" || echo "⚠️ Could not read ansible.cfg"
                 '''
             }
         }
@@ -106,14 +108,14 @@ pipeline {
                 ]]) {
                     sh '''
                         source "$ANSIBLE_VENV/bin/activate"
-                        export ANSIBLE_CONFIG="$ANSIBLE_CONFIG"
                         cd "$ANSIBLE_PATH"
                         ansible-playbook -i inventory/aws_ec2.yml \
                                          -i inventory/group_jenkins_all.yml \
                                          deploy-flask-app.yml \
                                          -l tag_flask_app \
                                          -e "artifact_name=$ARTIFACT_NAME" \
-                                         -e "s3_bucket=$S3_BUCKET"
+                                         -e "s3_bucket=$S3_BUCKET" \
+                                         --private-key=/var/lib/jenkins/.ssh/one.pem
                     '''
                 }
             }
