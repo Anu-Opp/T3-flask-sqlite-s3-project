@@ -43,11 +43,11 @@
         src: "/tmp/{{ artifact_name }}"
         dest: "{{ app_dir }}"
         remote_src: yes
-        extra_opts: [ "-j" ]
+
 
     - name: Install Python requirements
       pip:
-        requirements: "{{ app_dir }}/requirements.txt"
+        requirements: "{{ app_dir }}/flask-sqlite-s3-project/requirements.txt"
         executable: pip3
 
     - name: Initialize SQLite database if not exists
