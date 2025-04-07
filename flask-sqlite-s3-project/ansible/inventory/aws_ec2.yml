@@ -3,8 +3,8 @@ regions:
   - us-east-1
 filters:
   tag:Role: flask_app
-keyed_groups:
-  - key: tags.Role
-    prefix: tag
 hostnames:
-  - public-ip-address
+  - ip-address  # or 'public-ip-address', depending on what you need
+keyed_groups:
+  - key: tags.Name
+    prefix: name
