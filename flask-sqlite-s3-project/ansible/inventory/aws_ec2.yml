@@ -6,7 +6,7 @@ keyed_groups:
   - key: tags.Role
     prefix: tag
 
-#filters:
+filters:
   tag:Role: flask_app
 
 debug_cache: true
