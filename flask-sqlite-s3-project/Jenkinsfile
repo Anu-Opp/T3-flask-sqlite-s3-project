@@ -7,7 +7,7 @@ pipeline {
         S3_BUCKET = 't3-flask-app-artifacts'
         ARTIFACT_NAME = "flask-app-${BUILD_NUMBER}.zip"
         AWS_REGION = 'us-east-1'
-        ANSIBLE_PATH = "${WORKSPACE}/flask-sqlite-s3-project/ansible" // Change if needed
+        ANSIBLE_PATH = "${WORKSPACE}/flask-sqlite-s3-project/ansible"
     }
 
     stages {
@@ -73,8 +73,8 @@ pipeline {
                 ]]) {
                     sh '''
                         cd "$ANSIBLE_PATH"
-                        source /var/lib/jenkins/.ansible-venv/bin/activate
-                        ansible-playbook -i inventory/aws_ec2.yml -i inventory/group_jenkins_all.yml \
+                        ansible-playbook -i inventory/aws_ec2.yml \
+                            -i inventory/group_jenkins_all.yml \
                             deploy-flask-app.yml \
                             -e "artifact_name=$ARTIFACT_NAME" \
                             -e "s3_bucket=$S3_BUCKET"
