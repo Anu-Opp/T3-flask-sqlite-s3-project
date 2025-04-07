@@ -6,7 +6,7 @@
     app_dir: /opt/flask-app
     artifact_name: "{{ artifact_name }}"
     s3_bucket: "{{ s3_bucket }}"
-  
+
   tasks:
     - name: Install required packages
       package:
@@ -32,6 +32,11 @@
         object: "{{ artifact_name }}"
         dest: "/tmp/{{ artifact_name }}"
         mode: get
+
+    - name: Copy artifact to EC2 instance
+      copy:
+        src: "/tmp/{{ artifact_name }}"
+        dest: "/tmp/{{ artifact_name }}"
 
     - name: Unzip application files
       unarchive:
