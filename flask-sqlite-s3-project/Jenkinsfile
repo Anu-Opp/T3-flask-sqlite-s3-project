@@ -9,6 +9,7 @@ pipeline {
         AWS_REGION = 'us-east-1'
         ANSIBLE_PATH = "${WORKSPACE}/flask-sqlite-s3-project/ansible"
         ANSIBLE_VENV = "${WORKSPACE}/.ansible-venv"
+        ANSIBLE_CONFIG = '/var/lib/jenkins/ansible/ansible.cfg'
     }
 
     stages {
