@@ -20,11 +20,10 @@ pipeline {
         }
         
         stage('Install Dependencies') {
-            steps {
-                sh 'pip3 install -r path/to/your/actual/requirements.txt'
-
-            }
-        }
+    steps {
+        sh 'pip3 install -r flask-sqlite-s3-project/requirements.txt'
+    }
+}
         
         stage('Test') {
             steps {
@@ -85,4 +84,6 @@ pipeline {
             echo 'Deployment failed. Check the logs for details.'
         }
     }
-}
+}git add Jenkinsfile
+git commit -m "Add Jenkinsfile"
+git push origin main
