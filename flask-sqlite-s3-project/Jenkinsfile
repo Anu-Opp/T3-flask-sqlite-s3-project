@@ -29,4 +29,67 @@ pipeline {
         stage('Test') {
             steps {
                 dir('flask-sqlite-s3-project') {
-                    sh 'python3 -m pytest || echo "No tests available"
+                    sh '''python3 -m pytest || echo "No tests available"'''
+                }
+            }
+        }
+
+        stage('Package Artifact') {
+            steps {
+                sh '''
+                    mkdir -p flask-sqlite-s3-project/templates
+                    if [ -f flask-sqlite-s3-project/index.html ] && [ ! -f flask-sqlite-s3-project/templates/index.html ]; then
+                        mv flask-sqlite-s3-project/index.html flask-sqlite-s3-project/templates/
+                    fi
+                    zip -r "$ARTIFACT_NAME" \
+                        flask-sqlite-s3-project/app.py \
+                        flask-sqlite-s3-project/templates/ \
+                        flask-sqlite-s3-project/requirements.txt \
+                        flask-sqlite-s3-project/init_db.sql || echo "Using existing files"
+                '''
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh 'aws s3 cp "$ARTIFACT_NAME" s3://$S3_BUCKET/$ARTIFACT_NAME'
+                }
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh '''
+                        cd "$ANSIBLE_PATH"
+                        source /var/lib/jenkins/.ansible-venv/bin/activate
+                        ansible-playbook -i inventory/aws_ec2.yml -i inventory/group_jenkins_all.yml \
+                            deploy-flask-app.yml \
+                            -e "artifact_name=$ARTIFACT_NAME" \
+                            -e "s3_bucket=$S3_BUCKET"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Deployment successful! The Flask application is now accessible at http://your-app-server-ip:5000'
+        }
+        failure {
+            echo '❌ Deployment failed. Check the logs for details.'
+        }
+    }
+}
