@@ -1,7 +1,7 @@
 # /var/lib/jenkins/ansible/deploy_flask_app.yml
 ---
 - name: Deploy Flask SQLite Application
-  hosts: name_App_server 
+  hosts: tag_flask_app
   become: yes
   vars:
     app_dir: /opt/flask-app
