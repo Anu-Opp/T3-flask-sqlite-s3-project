@@ -1,4 +1,4 @@
----
+
     - name: Install required packages
       package:
         name:
@@ -7,43 +7,50 @@
           - sqlite
           - unzip
         state: present
-    
+
     - name: Create application directory
       file:
         path: "{{ app_dir }}"
         state: directory
         mode: '0755'
-    
+
     - name: Download artifact from S3
-      aws_s3:
+      become: false
+      delegate_to: localhost
+      remote_user: jenkins
+      amazon.aws.aws_s3:
         bucket: "{{ s3_bucket }}"
         object: "{{ artifact_name }}"
         dest: "/tmp/{{ artifact_name }}"
         mode: get
-      delegate_to: localhost
-    
+
+    - name: Copy artifact to EC2 instance
+      copy:
+        src: "/tmp/{{ artifact_name }}"
+        dest: "/tmp/{{ artifact_name }}"
+
     - name: Unzip application files
       unarchive:
         src: "/tmp/{{ artifact_name }}"
         dest: "{{ app_dir }}"
         remote_src: yes
-    
+
     - name: Install Python requirements
       pip:
-        requirements: "{{ app_dir }}/requirements.txt"
+        requirements: "{{ app_dir }}/flask-sqlite-s3-project/requirements.txt"
         executable: pip3
-    
+
     - name: Initialize SQLite database if not exists
-      shell: "sqlite3 {{ app_dir }}/data.db < {{ app_dir }}/init_db.sql"
+      shell: "sqlite3 {{ app_dir }}/data.db < {{ app_dir }}/flask-sqlite-s3-project/init_db.sql"
       args:
         creates: "{{ app_dir }}/data.db"
-    
+
     - name: Create Flask service file
       template:
-        src: "roles/flask-app/templates/flask-service.j2"
+        src: "flask-service.j2"
         dest: /etc/systemd/system/flask-app.service
         mode: '0644'
-    
+
     - name: Start and enable Flask service
       systemd:
         name: flask-app
