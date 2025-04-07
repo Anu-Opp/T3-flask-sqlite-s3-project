@@ -6,56 +6,57 @@ pipeline {
     environment {
         S3_BUCKET = 't3-flask-app-artifacts'
         ARTIFACT_NAME = "flask-app-${BUILD_NUMBER}.zip"
-        AWS_REGION = 'us-east-1' // Change to your AWS region
+        AWS_REGION = 'us-east-1'
         ANSIBLE_PATH = "${WORKSPACE}/ansible"
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 git credentialsId: 'git-credentials',
                     url: 'https://github.com/Anu-Opp/T3-flask-sqlite-s3-project.git',
                     branch: 'main'
+                sh 'ls -l'
             }
         }
-        
+
         stage('Install Dependencies') {
-    steps {
-        sh 'pip3 install -r flask-sqlite-s3-project/requirements.txt'
-    }
-}
+            steps {
+                sh 'pip3 install -r requirements.txt'
+            }
+        }
+
         stage('Test') {
             steps {
                 sh 'python3 -m pytest || echo "No tests available"'
             }
         }
-        
+
         stage('Package Artifact') {
             steps {
                 sh '''
-                    # Ensure templates directory exists
                     mkdir -p templates
-                    # Move HTML files to templates if needed
                     if [ -f index.html ] && [ ! -f templates/index.html ]; then
                         mv index.html templates/
                     fi
-                    # Package all required files
-                    zip -r "${ARTIFACT_NAME}" app.py templates/ requirements.txt init_db.sql data.db || echo "Using existing files"
+                    zip -r "$ARTIFACT_NAME" app.py templates/ requirements.txt init_db.sql data.db || echo "Using existing files"
                 '''
             }
         }
-        
+
         stage('Upload to S3') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
                                   credentialsId: 'aws-credentials',
                                   accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    sh 'aws s3 cp "${ARTIFACT_NAME}" s3://${S3_BUCKET}/${ARTIFACT_NAME}'
+                    sh '''
+                        aws s3 cp "$ARTIFACT_NAME" s3://$S3_BUCKET/$ARTIFACT_NAME
+                    '''
                 }
             }
         }
-        
+
         stage('Deploy with Ansible') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
@@ -65,24 +66,22 @@ pipeline {
                     sh '''
                         cd /var/lib/jenkins/ansible/flask-sqlite-s3-project/ansible
                         source /var/lib/jenkins/.ansible-venv/bin/activate
-                        ansible-playbook -i inventory/aws_ec2.yml -i inventory/group_jenkins_all.yml \\
-                        deploy-flask-app.yml \\
-                        -e "artifact_name=${ARTIFACT_NAME}" \\
-                        -e "s3_bucket=${S3_BUCKET}"
+                        ansible-playbook -i inventory/aws_ec2.yml -i inventory/group_jenkins_all.yml \
+                        deploy-flask-app.yml \
+                        -e "artifact_name=$ARTIFACT_NAME" \
+                        -e "s3_bucket=$S3_BUCKET"
                     '''
                 }
             }
         }
     }
-    
+
     post {
         success {
-            echo 'Deployment successful! The Flask application is now accessible at http://your-app-server-ip:5000'
+            echo '✅ Deployment successful! The Flask application is now accessible at http://your-app-server-ip:5000'
         }
         failure {
-            echo 'Deployment failed. Check the logs for details.'
+            echo '❌ Deployment failed. Check the logs for details.'
         }
     }
-}git add Jenkinsfile
-git commit -m "Add Jenkinsfile"
-git push origin main
+}
