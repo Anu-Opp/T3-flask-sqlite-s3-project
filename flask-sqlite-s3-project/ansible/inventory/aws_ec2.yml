@@ -18,5 +18,5 @@ compose:
 # Add this block if SSH connection issues persist
 defaults:
   ansible_user: ec2-user
-  ansible_ssh_private_key_file: /var/lib/jenkins/.ssh/your-key.pem
+  ansible_ssh_private_key_file: /var/lib/jenkins/.ssh/one.pem
   host_key_checking: false
