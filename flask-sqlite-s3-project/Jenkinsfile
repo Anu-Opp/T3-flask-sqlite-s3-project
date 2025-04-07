@@ -24,7 +24,6 @@ pipeline {
         sh 'pip3 install -r flask-sqlite-s3-project/requirements.txt'
     }
 }
-        
         stage('Test') {
             steps {
                 sh 'python3 -m pytest || echo "No tests available"'
