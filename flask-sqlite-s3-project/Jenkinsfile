@@ -13,6 +13,12 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                sh 'rm -f flask-app-*.zip || true'
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git credentialsId: 'git-credentials',
@@ -31,7 +37,13 @@ pipeline {
         stage('Test') {
             steps {
                 dir('flask-sqlite-s3-project') {
-                    sh 'python3 -m pytest || echo "No tests available"'
+                    sh '''
+                        if python3 -m pytest; then
+                            echo "✅ Tests passed"
+                        else
+                            echo "⚠️ No tests or test failures"
+                        fi
+                    '''
                 }
             }
         }
@@ -60,7 +72,7 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    sh 'aws s3 cp "$ARTIFACT_NAME" s3://$S3_BUCKET/$ARTIFACT_NAME'
+                    sh 'aws s3 cp "$ARTIFACT_NAME" "s3://$S3_BUCKET/$ARTIFACT_NAME"'
                 }
             }
         }
@@ -109,7 +121,7 @@ pipeline {
                                          deploy-flask-app.yml \
                                          -l tag_flask_app \
                                          -e "artifact_name=$ARTIFACT_NAME" \
-                                         -e "s3_bucket=$S3_BUCKET" 
+                                         -e "s3_bucket=$S3_BUCKET"
                     '''
                 }
             }
@@ -125,6 +137,7 @@ pipeline {
         }
     }
 }
+
 
 
 
