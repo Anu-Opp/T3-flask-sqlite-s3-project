@@ -8,6 +8,7 @@ pipeline {
         ARTIFACT_NAME = "flask-app-${BUILD_NUMBER}.zip"
         AWS_REGION = 'us-east-1'
         ANSIBLE_PATH = "${WORKSPACE}/flask-sqlite-s3-project/ansible"
+        ANSIBLE_VENV = "${WORKSPACE}/.ansible-venv"
     }
 
     stages {
@@ -29,7 +30,7 @@ pipeline {
         stage('Test') {
             steps {
                 dir('flask-sqlite-s3-project') {
-                    sh '''python3 -m pytest || echo "No tests available"'''
+                    sh 'python3 -m pytest || echo "No tests available"'
                 }
             }
         }
@@ -63,6 +64,22 @@ pipeline {
             }
         }
 
+        stage('Setup Ansible venv') {
+            steps {
+                sh '''
+                    if [ ! -f "$ANSIBLE_VENV/bin/activate" ]; then
+                        echo "Creating new Ansible virtual environment..."
+                        python3 -m venv "$ANSIBLE_VENV"
+                        source "$ANSIBLE_VENV/bin/activate"
+                        pip install --upgrade pip
+                        pip install ansible boto3
+                    else
+                        echo "Ansible virtual environment already exists"
+                    fi
+                '''
+            }
+        }
+
         stage('Debug Info') {
             steps {
                 sh '''
@@ -84,8 +101,8 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     sh '''
+                        source "$ANSIBLE_VENV/bin/activate"
                         cd "$ANSIBLE_PATH"
-                        source /var/lib/jenkins/.ansible-venv/bin/activate
                         ansible-playbook -i inventory/aws_ec2.yml \
                             -i inventory/group_jenkins_all.yml \
                             deploy-flask-app.yml \
@@ -106,6 +123,7 @@ pipeline {
         }
     }
 }
+
 
 //🚀 What the Debug Stage Shows You:
 //Your current working directory (pwd)
