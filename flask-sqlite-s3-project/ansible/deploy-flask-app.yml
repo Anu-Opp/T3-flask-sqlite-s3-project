@@ -51,7 +51,7 @@
         executable: pip3
 
     - name: Initialize SQLite database if not exists
-      shell: "sqlite3 {{ app_dir }}/data.db < {{ app_dir }}/init_db.sql"
+      shell: "sqlite3 {{ app_dir }}/data.db < {{ app_dir }}/flask-sqlite-s3-project/init_db.sql"
       args:
         creates: "{{ app_dir }}/data.db"
 
