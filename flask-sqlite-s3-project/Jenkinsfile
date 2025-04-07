@@ -104,10 +104,11 @@ pipeline {
                         source "$ANSIBLE_VENV/bin/activate"
                         cd "$ANSIBLE_PATH"
                         ansible-playbook -i inventory/aws_ec2.yml \
-                            -i inventory/group_jenkins_all.yml \
-                            deploy-flask-app.yml \
-                            -e "artifact_name=$ARTIFACT_NAME" \
-                            -e "s3_bucket=$S3_BUCKET"
+                                         -i inventory/group_jenkins_all.yml \
+                                         deploy-flask-app.yml \
+                                         -l name_App_server \
+                                         -e "artifact_name=$ARTIFACT_NAME" \
+                                         -e "s3_bucket=$S3_BUCKET"
                     '''
                 }
             }
@@ -123,6 +124,7 @@ pipeline {
         }
     }
 }
+
 
 
 //🚀 What the Debug Stage Shows You:
