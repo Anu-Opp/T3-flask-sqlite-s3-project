@@ -1,6 +1,3 @@
 jenkins_group:
   children:
-    name_Jenkins_master: {}
-    name_Jenkins_agent: {}
-    name_App_server: {}
-
+    tag_flask_app: {}
