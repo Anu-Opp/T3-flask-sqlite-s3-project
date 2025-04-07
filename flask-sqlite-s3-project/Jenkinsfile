@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'amazon-linux' // Ensure this matches your agent label
+        label 'amazon-linux'
     }
 
     environment {
@@ -63,6 +63,18 @@ pipeline {
             }
         }
 
+        stage('Debug Info') {
+            steps {
+                sh '''
+                    echo "WORKSPACE: $WORKSPACE"
+                    echo "ANSIBLE_PATH: $ANSIBLE_PATH"
+                    pwd
+                    ls -al
+                    ls -al "$ANSIBLE_PATH"
+                '''
+            }
+        }
+
         stage('Deploy with Ansible') {
             steps {
                 withCredentials([[
@@ -73,6 +85,7 @@ pipeline {
                 ]]) {
                     sh '''
                         cd "$ANSIBLE_PATH"
+                        source /var/lib/jenkins/.ansible-venv/bin/activate
                         ansible-playbook -i inventory/aws_ec2.yml \
                             -i inventory/group_jenkins_all.yml \
                             deploy-flask-app.yml \
@@ -93,3 +106,9 @@ pipeline {
         }
     }
 }
+
+//🚀 What the Debug Stage Shows You:
+//Your current working directory (pwd)
+//all files in the workspace (ls -al)
+//the contents of your Ansible directory (ls -al "$ANSIBLE_PATH")
+//Confirming WORKSPACE and ANSIBLE_PATH values are correct
