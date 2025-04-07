@@ -108,7 +108,8 @@ pipeline {
                                          deploy-flask-app.yml \
                                          -l tag_flask_app \
                                          -e "artifact_name=$ARTIFACT_NAME" \
-                                         -e "s3_bucket=$S3_BUCKET"
+                                         -e "s3_bucket=$S3_BUCKET" \
+                                         --private-key=/var/lib/jenkins/.ssh/one.pem
                     '''
                 }
             }
@@ -124,6 +125,7 @@ pipeline {
         }
     }
 }
+
 
 
 
