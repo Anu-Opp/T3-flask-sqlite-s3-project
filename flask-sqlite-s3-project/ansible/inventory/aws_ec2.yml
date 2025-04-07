@@ -2,9 +2,9 @@ plugin: aws_ec2
 regions:
   - us-east-1
 filters:
-tag:Role: flask_app
+  tag:Role: flask_app
 hostnames:
   - ip-address  # or 'public-ip-address', depending on what you need
 keyed_groups:
-  - key: tags.Name
-    prefix: name
+  - key: Role
+    prefix: tag
