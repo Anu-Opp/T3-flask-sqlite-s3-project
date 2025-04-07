@@ -1,4 +1,4 @@
-# flask-service.j2
+# flask-app.service.j2
 
 [Unit]
 Description=Flask App
@@ -6,10 +6,11 @@ After=network.target
 
 [Service]
 User=ec2-user
-WorkingDirectory={{ app_dir }}
-ExecStart=/usr/bin/python3 {{ app_dir }}/app.py
+WorkingDirectory={{ app_dir }}/flask-sqlite-s3-project
+ExecStart=/usr/bin/python3 {{ app_dir }}/flask-sqlite-s3-project/app.py
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
+
 
