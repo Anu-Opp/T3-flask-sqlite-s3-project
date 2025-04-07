@@ -8,3 +8,5 @@ keyed_groups:
 
 #filters:
   tag:Role: flask_app
+
+debug_cache: true
